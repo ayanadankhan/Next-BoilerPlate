@@ -1,4 +1,4 @@
-// File: C:\next js\nextjs-mongodb-app\app\users\page.tsx
+// File: C:\next js\its-working\Next-BoilerPlate\app\users\page.tsx
 import * as entry from '../../../../app/users/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

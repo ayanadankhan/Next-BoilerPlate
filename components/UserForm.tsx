@@ -1,21 +1,40 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-
-interface UserFormProps {
-  onSubmit: (userData: UserData) => void;
-  initialValues?: UserData;
-  buttonText?: string;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, Save, X } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface UserData {
   _id?: string;
   name: string;
   email: string;
-  role: string;
+  role: 'user' | 'admin' | 'editor'; // Explicitly defined roles
 }
 
-export default function UserForm({ onSubmit, initialValues, buttonText = 'Save' }: UserFormProps) {
+interface UserFormProps {
+  onSubmit: (userData: UserData) => void;
+  initialValues?: UserData;
+  buttonText?: string;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}
+
+export default function UserForm({ 
+  onSubmit, 
+  initialValues, 
+  buttonText = 'Save', 
+  onCancel,
+  isSubmitting,
+}: UserFormProps) {
   const [userData, setUserData] = useState<UserData>({
     name: '',
     email: '',
@@ -25,74 +44,91 @@ export default function UserForm({ onSubmit, initialValues, buttonText = 'Save' 
   useEffect(() => {
     if (initialValues) {
       setUserData(initialValues);
+    } else {
+      // Reset form state when creating a new user
+      setUserData({ name: '', email: '', role: 'user' });
     }
   }, [initialValues]);
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!userData.name.trim() || !userData.email.trim()) return;
     onSubmit(userData);
   };
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserData(prev => ({ ...prev, [name]: value }));
   };
+
+  const handleRoleChange = (value: string) => {
+    setUserData(prev => ({ ...prev, role: value as 'user' | 'admin' | 'editor' }));
+  };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Name
-        </label>
-        <input
+    <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+      
+      {/* Name */}
+      <div className="grid gap-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
           type="text"
           name="name"
           id="name"
+          placeholder="User's Full Name"
           value={userData.name}
           onChange={handleChange}
           required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
       
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
+      {/* Email */}
+      <div className="grid gap-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
           type="email"
           name="email"
           id="email"
+          placeholder="user@example.com"
           value={userData.email}
           onChange={handleChange}
           required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
       
-      <div>
-        <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-          Role
-        </label>
-        <select
+      {/* Role */}
+      <div className="grid gap-2">
+        <Label htmlFor="role">Role</Label>
+        <Select
           name="role"
-          id="role"
           value={userData.role}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          onValueChange={handleRoleChange}
         >
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-          <option value="editor">Editor</option>
-        </select>
+          <SelectTrigger id="role">
+            <SelectValue placeholder="Select Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="user">User (Client/Viewer)</SelectItem>
+            <SelectItem value="editor">Editor (Content Creator)</SelectItem>
+            <SelectItem value="admin">Admin (Full Control)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
-      <button
-        type="submit"
-        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {buttonText}
-      </button>
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          <X className="mr-2 h-4 w-4" /> Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {buttonText}
+        </Button>
+      </div>
     </form>
   );
 }
