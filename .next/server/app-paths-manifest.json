@@ -1,7 +1,6 @@
 {
-  "/page": "app/page.js",
-  "/users/page": "app/users/page.js",
   "/media-assets/page": "app/media-assets/page.js",
+  "/users/page": "app/users/page.js",
   "/categories/page": "app/categories/page.js",
   "/api/media-assets/route": "app/api/media-assets/route.js"
 }

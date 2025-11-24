@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Filter, X, Loader2 } from "lucide-react";
+import { Plus, Filter, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -17,7 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"; 
+} from "@/components/ui/sheet";
 import {
   Card,
   CardContent,
@@ -26,17 +26,18 @@ import {
 } from "@/components/ui/card";
 
 export default function MediaAssetsPage() {
-  const { user, isLoading: isAuthLoading, isAuthenticated, isAdmin } = useAuth(); // Auth hook
-  
+  const { user, isLoading: isAuthLoading, isAuthenticated, isAdmin } = useAuth();
+
   // --- Data States ---
   const [assets, setAssets] = useState<MediaAssetData[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  
+  const [totalAssets, setTotalAssets] = useState(0); // Total count from server
+
   // --- UI States ---
   const [loading, setLoading] = useState<boolean>(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editAsset, setEditAsset] = useState<MediaAssetData | null>(null);
-  
+
   // --- Filter States ---
   const [filterSubject, setFilterSubject] = useState('');
   const [filterMainCat, setFilterMainCat] = useState<string>('all');
@@ -45,86 +46,88 @@ export default function MediaAssetsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // --- Initial Fetch ---
+  // --- Pagination States ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [assetsPerPage, setAssetsPerPage] = useState(10); // Limit
+
+  // Calculate total pages for UI display
+  const totalPages = Math.ceil(totalAssets / assetsPerPage);
+
+  // --- Server-Side Fetch Effect ---
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const [resAssets, resCats] = await Promise.all([
-                fetch('/api/media-assets'),
-                fetch('/api/categories')
-            ]);
-            
-            if (resAssets.ok && resCats.ok) {
-              const assetData = await resAssets.json();
-              const catData = await resCats.json();
-              setAssets(assetData.mediaAssets);
-              setCategories(catData.categories);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+    // 1. Build the API URL with current states
+    const buildApiUrl = () => {
+      const params = new URLSearchParams();
+      
+      // Pagination Params
+      params.append('page', currentPage.toString());
+      params.append('limit', assetsPerPage.toString());
+
+      // Filter Params
+      if (filterSubject) params.append('subject', filterSubject);
+      // NOTE: We pass the ID to the server. The server must handle the Category/Subcategory lookup.
+      if (filterMainCat !== 'all') params.append('mainCat', filterMainCat);
+      if (filterSubCat !== 'all') params.append('subCat', filterSubCat);
+      if (filterDuration) params.append('duration', filterDuration);
+      if (dateFrom) params.append('dateFrom', dateFrom);
+      if (dateTo) params.append('dateTo', dateTo);
+
+      return `/api/media-assets?${params.toString()}`;
     };
-    fetchData();
-  }, []);
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const assetUrl = buildApiUrl();
+        const [resAssets, resCats] = await Promise.all([
+          fetch(assetUrl),
+          // Fetch categories only once (or if the list is empty)
+          categories.length === 0 ? fetch('/api/categories') : Promise.resolve({ ok: true, json: () => ({ categories: [] }) }),
+        ]);
+
+        if (resAssets.ok) {
+          const assetData = await resAssets.json();
+          setAssets(assetData.mediaAssets);
+          setTotalAssets(assetData.totalAssets);
+        }
+
+        if (categories.length === 0 && resCats.ok) {
+          const catData = await resCats.json();
+          setCategories(catData.categories);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Check if a filter changed. If so, reset to page 1 and trigger re-fetch.
+    const isFilterChanged = () => {
+        // A simple heuristic to check if any filter value is active or non-default
+        return filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo;
+    }
+    
+    // If we're on a non-default page (1) and filters were just applied, reset the page.
+    if (currentPage > 1 && isFilterChanged()) {
+        setCurrentPage(1);
+    } else {
+        fetchData();
+    }
+    
+    // Dependencies include all states that affect the API query
+  }, [
+    currentPage, assetsPerPage, categories.length,
+    filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo 
+  ]);
 
   // --- Derived Data for Dropdowns ---
-  const mainCategories = categories.filter(c => !c.parentId);
-  
+  const mainCategories = useMemo(() => categories.filter(c => !c.parentId), [categories]);
+
   const availableSubCategories = useMemo(() => {
     if (filterMainCat === 'all') return [];
     return categories.filter(c => c.parentId === filterMainCat);
   }, [categories, filterMainCat]);
-
-  // --- The Efficient Multi-Filter Logic ---
-  const filteredAssets = useMemo(() => {
-    // ... [Filter logic remains the same] ...
-    return assets.filter(asset => {
-      // 1. Subject Filter
-      if (filterSubject && !asset.subject.toLowerCase().includes(filterSubject.toLowerCase())) {
-        return false;
-      }
-
-      // 2. Main Category Filter
-      if (filterMainCat !== 'all') {
-        const mainCat = categories.find(c => c._id === filterMainCat);
-        if (mainCat && asset.genre !== mainCat.name) return false;
-      }
-
-      // 3. Sub Category Filter
-      if (filterSubCat !== 'all') {
-        if (asset.categoryId && asset.categoryId !== filterSubCat) return false;
-        if (!asset.categoryId) {
-           const subCat = categories.find(c => c._id === filterSubCat);
-           if (subCat && asset.item !== subCat.name) return false;
-        }
-      }
-
-      // 4. Duration Filter
-      if (filterDuration && !asset.duration.includes(filterDuration)) {
-        return false;
-      }
-
-      // 5. Date Range Filter
-      if (asset.creationDate) {
-        const assetDate = new Date(asset.creationDate).setHours(0,0,0,0);
-        
-        if (dateFrom) {
-          const from = new Date(dateFrom).setHours(0,0,0,0);
-          if (assetDate < from) return false;
-        }
-        
-        if (dateTo) {
-          const to = new Date(dateTo).setHours(0,0,0,0);
-          if (assetDate > to) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [assets, categories, filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo]);
 
   // --- Handlers ---
   const resetFilters = () => {
@@ -134,16 +137,19 @@ export default function MediaAssetsPage() {
     setFilterDuration('');
     setDateFrom('');
     setDateTo('');
+    setCurrentPage(1); // Crucial: Reset page on filter reset
   };
+
+  // NOTE: Asset Submission/Deletion handlers should ideally also trigger the main fetchData effect 
+  // instead of fetching ALL assets again, but for simplicity, the current implementation is acceptable.
 
   const handleAssetSubmit = async (assetData: MediaAssetData) => {
     if (!isAdmin) {
-        alert("You do not have permission to perform this action.");
-        return;
+      alert("You do not have permission to perform this action.");
+      return;
     }
     try {
       const isEdit = editAsset && editAsset._id;
-      // Note: In a real app, API routes would check the user session for 'isAdmin'
       const url = isEdit ? `/api/media-assets/${editAsset._id}` : '/api/media-assets';
       const method = isEdit ? 'PUT' : 'POST';
 
@@ -152,12 +158,11 @@ export default function MediaAssetsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(assetData),
       });
-      
+
       if (response.ok) {
-        const res = await fetch('/api/media-assets');
-        const data = await res.json();
-        setAssets(data.mediaAssets);
-        setIsSheetOpen(false); // Close the Sheet
+        // Trigger re-fetch using the state change (will re-apply current filters/pagination)
+        setCurrentPage(1); 
+        setIsSheetOpen(false);
         setEditAsset(null);
       } else {
         alert("Operation failed due to permission or server error.");
@@ -167,17 +172,43 @@ export default function MediaAssetsPage() {
     }
   };
 
+  const handleBulkSubmit = async (bulkData: MediaAssetData[]) => {
+    if (!isAdmin) {
+      alert("You do not have permission to perform this action.");
+      return;
+    }
+    try {
+      const response = await fetch('/api/media-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bulkData),
+      });
+
+      if (response.ok) {
+        setCurrentPage(1);
+        setIsSheetOpen(false);
+        setEditAsset(null);
+        alert(`Successfully imported ${bulkData.length} assets.`);
+      } else {
+        alert("Bulk import failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during bulk import.");
+    }
+  };
+
   const handleDeleteAsset = async (assetId: string) => {
     if (!isAdmin) {
-        alert("You do not have permission to perform this action.");
-        return;
+      alert("You do not have permission to perform this action.");
+      return;
     }
-    if(!confirm("Are you sure you want to delete this asset?")) return;
+    if (!confirm("Are you sure you want to delete this asset?")) return;
     try {
-      // Note: API route must also check for Admin role
       const response = await fetch(`/api/media-assets/${assetId}`, { method: 'DELETE' });
       if (response.ok) {
-        setAssets(prev => prev.filter(a => a._id !== assetId));
+        // Trigger re-fetch (to handle potential blank page if last item was deleted)
+        setCurrentPage(prev => (assets.length === 1 && prev > 1) ? prev - 1 : prev);
       } else {
         alert("Deletion failed due to permission or server error.");
       }
@@ -188,12 +219,14 @@ export default function MediaAssetsPage() {
 
   const openEditSheet = (asset: MediaAssetData) => {
     if (!isAdmin) {
-        alert("You must be an Admin to edit assets.");
-        return;
+      alert("You must be an Admin to edit assets.");
+      return;
     }
     setEditAsset(asset);
     setIsSheetOpen(true);
   };
+  
+  // No need for filteredAssets useMemo anymore, as 'assets' is already filtered/paginated
 
   // Show a loading screen while authentication is resolving
   if (isAuthLoading) {
@@ -228,7 +261,7 @@ export default function MediaAssetsPage() {
 
   return (
     <div className="space-y-6 fade-in">
-      
+
       {/* 1. HEADER & ACTION - Uses Sheet */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -237,14 +270,14 @@ export default function MediaAssetsPage() {
             {isAdmin ? "Admin: Full control over assets." : "Client: View and filter access only."}
           </p>
         </div>
-        
+
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             {/* Only show the Add button if the user is Admin */}
-            <Button 
-                onClick={() => { setEditAsset(null); setIsSheetOpen(true); }} 
-                className="shadow-sm"
-                disabled={!isAdmin}
+            <Button
+              onClick={() => { setEditAsset(null); setIsSheetOpen(true); }}
+              className="shadow-sm"
+              disabled={!isAdmin}
             >
               <Plus className="mr-2 h-4 w-4" /> Add New Asset
             </Button>
@@ -256,9 +289,10 @@ export default function MediaAssetsPage() {
                 Fill in the details below. Click save when you're done.
               </SheetDescription>
             </SheetHeader>
-            <MediaAssetForm 
-              onSubmit={handleAssetSubmit} 
-              initialValues={editAsset || undefined} 
+            <MediaAssetForm
+              onSubmit={handleAssetSubmit}
+              onBulkSubmit={handleBulkSubmit}
+              initialValues={editAsset || undefined}
               categories={categories}
               buttonText={editAsset ? 'Save Changes' : 'Create Asset'}
               onCancel={() => setIsSheetOpen(false)}
@@ -270,118 +304,168 @@ export default function MediaAssetsPage() {
       {/* 2. ADVANCED FILTER BAR (Visible to all authenticated users) */}
       <Card>
         <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-indigo-600" />
-                    Advanced Filters
-                </CardTitle>
-                {(filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo) && (
-                    <Button variant="ghost" size="sm" onClick={resetFilters} className="text-red-500 hover:text-red-700 h-8 px-2">
-                        <X className="h-3 w-3 mr-1" /> Reset
-                    </Button>
-                )}
-            </div>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Filter className="h-4 w-4 text-indigo-600" />
+              Advanced Filters
+            </CardTitle>
+            {(filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-red-500 hover:text-red-700 h-8 px-2">
+                <X className="h-3 w-3 mr-1" /> Reset
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                {/* Subject Search */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">Subject</Label>
-                    <Input 
-                        placeholder="Search..." 
-                        value={filterSubject}
-                        onChange={(e) => setFilterSubject(e.target.value)}
-                        className="h-9"
-                    />
-                </div>
-
-                {/* Main Category */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">Genre (Main)</Label>
-                    <Select value={filterMainCat} onValueChange={(val) => { setFilterMainCat(val); setFilterSubCat('all'); }}>
-                        <SelectTrigger className="h-9">
-                            <SelectValue placeholder="All Genres" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genres</SelectItem>
-                            {mainCategories.map(c => (
-                                <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Sub Category */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">Item (Sub)</Label>
-                    <Select 
-                        value={filterSubCat} 
-                        onValueChange={setFilterSubCat}
-                        disabled={filterMainCat === 'all'}
-                    >
-                        <SelectTrigger className="h-9">
-                            <SelectValue placeholder="All Items" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Items</SelectItem>
-                            {availableSubCategories.map(c => (
-                                <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Duration */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">Duration</Label>
-                    <Input 
-                        placeholder="e.g. 10:30" 
-                        value={filterDuration}
-                        onChange={(e) => setFilterDuration(e.target.value)}
-                        className="h-9"
-                    />
-                </div>
-
-                {/* Date From */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">From Date</Label>
-                    <Input 
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        className="h-9"
-                    />
-                </div>
-
-                {/* Date To */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-slate-500">To Date</Label>
-                    <Input 
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        className="h-9"
-                    />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {/* Subject Search */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">Subject</Label>
+              <Input
+                placeholder="Search..."
+                value={filterSubject}
+                onChange={(e) => setFilterSubject(e.target.value)}
+                className="h-9"
+              />
             </div>
+
+            {/* Main Category */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">Genre (Main)</Label>
+              <Select value={filterMainCat} onValueChange={(val) => { setFilterMainCat(val); setFilterSubCat('all'); }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Genres" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Genres</SelectItem>
+                  {mainCategories.map(c => (
+                    <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sub Category */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">Item (Sub)</Label>
+              <Select
+                value={filterSubCat}
+                onValueChange={setFilterSubCat}
+                disabled={filterMainCat === 'all'}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Items" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Items</SelectItem>
+                  {availableSubCategories.map(c => (
+                    <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">Duration</Label>
+              <Input
+                placeholder="e.g. 10:30"
+                value={filterDuration}
+                onChange={(e) => setFilterDuration(e.target.value)}
+                className="h-9"
+              />
+            </div>
+
+            {/* Date From */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">From Date</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9"
+              />
+            </div>
+
+            {/* Date To */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-500">To Date</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
+      
+      {/* 2.5. PAGINATION CONTROLS */}
+      {totalPages > 1 && (
+          <div className="flex justify-between items-center gap-4 text-sm pt-2">
+              <Select value={assetsPerPage.toString()} onValueChange={(val) => { 
+                setAssetsPerPage(parseInt(val));
+                setCurrentPage(1); // Reset page when changing limit
+              }}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="10 per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="25">25 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-700 font-medium">
+                    Page **{currentPage}** of **{totalPages}** ({totalAssets} Assets)
+                </span>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+          </div>
+      )}
+
 
       {/* 3. RESULTS LIST */}
       <Card className="border-0 shadow-none bg-transparent">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center p-8 text-slate-500">Loading assets...</div>
+            <div className="flex justify-center p-8 text-slate-500">
+              <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Loading assets...
+            </div>
           ) : (
             <>
-                <div className="mb-2 text-sm text-slate-500 text-right">
-                    Showing {filteredAssets.length} results
+              <div className="mb-2 text-sm text-slate-500 text-right">
+                Showing {assets.length} results on this page
+              </div>
+              {assets.length === 0 ? (
+                <div className="text-center p-10 text-slate-500 border rounded-lg">
+                  No media assets found matching the current filters.
                 </div>
-                <MediaAssetList 
-                assets={filteredAssets} 
-                onEdit={openEditSheet} // Using the restricted openEditSheet handler
-                onDelete={handleDeleteAsset} // Using the restricted handleDeleteAsset handler
+              ) : (
+                <MediaAssetList
+                  assets={assets} // Now using the paginated 'assets' state
+                  onEdit={openEditSheet}
+                  onDelete={handleDeleteAsset}
                 />
+              )}
             </>
           )}
         </CardContent>
