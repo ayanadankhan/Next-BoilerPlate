@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { useAuth } from '../context/AuthContext';
 import MediaAssetForm, { MediaAssetData } from '@/components/MediaAssetForm';
 import MediaAssetList from '@/components/MediaAssetList';
 import { CategoryData } from '@/components/CategoryForm';
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Filter, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Filter, X, ChevronLeft, ChevronRight, Loader2, Search, LayoutGrid, Table2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -31,12 +31,13 @@ export default function MediaAssetsPage() {
   // --- Data States ---
   const [assets, setAssets] = useState<MediaAssetData[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [totalAssets, setTotalAssets] = useState(0); // Total count from server
+  const [totalAssets, setTotalAssets] = useState(0);
 
   // --- UI States ---
   const [loading, setLoading] = useState<boolean>(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editAsset, setEditAsset] = useState<MediaAssetData | null>(null);
+  const [showFilters, setShowFilters] = useState(true);
 
   // --- Filter States ---
   const [filterSubject, setFilterSubject] = useState('');
@@ -48,24 +49,22 @@ export default function MediaAssetsPage() {
 
   // --- Pagination States ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [assetsPerPage, setAssetsPerPage] = useState(10); // Limit
+  const [assetsPerPage, setAssetsPerPage] = useState(10);
 
-  // Calculate total pages for UI display
   const totalPages = Math.ceil(totalAssets / assetsPerPage);
+
+  // Check if any filters are active
+  const hasActiveFilters = filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo;
 
   // --- Server-Side Fetch Effect ---
   useEffect(() => {
-    // 1. Build the API URL with current states
     const buildApiUrl = () => {
       const params = new URLSearchParams();
       
-      // Pagination Params
       params.append('page', currentPage.toString());
       params.append('limit', assetsPerPage.toString());
 
-      // Filter Params
       if (filterSubject) params.append('subject', filterSubject);
-      // NOTE: We pass the ID to the server. The server must handle the Category/Subcategory lookup.
       if (filterMainCat !== 'all') params.append('mainCat', filterMainCat);
       if (filterSubCat !== 'all') params.append('subCat', filterSubCat);
       if (filterDuration) params.append('duration', filterDuration);
@@ -81,7 +80,6 @@ export default function MediaAssetsPage() {
         const assetUrl = buildApiUrl();
         const [resAssets, resCats] = await Promise.all([
           fetch(assetUrl),
-          // Fetch categories only once (or if the list is empty)
           categories.length === 0 ? fetch('/api/categories') : Promise.resolve({ ok: true, json: () => ({ categories: [] }) }),
         ]);
 
@@ -102,20 +100,15 @@ export default function MediaAssetsPage() {
       }
     };
     
-    // Check if a filter changed. If so, reset to page 1 and trigger re-fetch.
     const isFilterChanged = () => {
-        // A simple heuristic to check if any filter value is active or non-default
         return filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo;
     }
     
-    // If we're on a non-default page (1) and filters were just applied, reset the page.
     if (currentPage > 1 && isFilterChanged()) {
         setCurrentPage(1);
     } else {
         fetchData();
     }
-    
-    // Dependencies include all states that affect the API query
   }, [
     currentPage, assetsPerPage, categories.length,
     filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo 
@@ -137,11 +130,8 @@ export default function MediaAssetsPage() {
     setFilterDuration('');
     setDateFrom('');
     setDateTo('');
-    setCurrentPage(1); // Crucial: Reset page on filter reset
+    setCurrentPage(1);
   };
-
-  // NOTE: Asset Submission/Deletion handlers should ideally also trigger the main fetchData effect 
-  // instead of fetching ALL assets again, but for simplicity, the current implementation is acceptable.
 
   const handleAssetSubmit = async (assetData: MediaAssetData) => {
     if (!isAdmin) {
@@ -160,7 +150,6 @@ export default function MediaAssetsPage() {
       });
 
       if (response.ok) {
-        // Trigger re-fetch using the state change (will re-apply current filters/pagination)
         setCurrentPage(1); 
         setIsSheetOpen(false);
         setEditAsset(null);
@@ -207,7 +196,6 @@ export default function MediaAssetsPage() {
     try {
       const response = await fetch(`/api/media-assets/${assetId}`, { method: 'DELETE' });
       if (response.ok) {
-        // Trigger re-fetch (to handle potential blank page if last item was deleted)
         setCurrentPage(prev => (assets.length === 1 && prev > 1) ? prev - 1 : prev);
       } else {
         alert("Deletion failed due to permission or server error.");
@@ -225,14 +213,13 @@ export default function MediaAssetsPage() {
     setEditAsset(asset);
     setIsSheetOpen(true);
   };
-  
-  // No need for filteredAssets useMemo anymore, as 'assets' is already filtered/paginated
 
-  // Show a loading screen while authentication is resolving
+  // Show loading screen while authentication is resolving
   if (isAuthLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh] text-slate-500">
-        <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Loading Authentication...
+      <div className="flex flex-col justify-center items-center h-[60vh] space-y-3">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <p className="text-sm text-slate-600 font-medium">Authenticating...</p>
       </div>
     );
   }
@@ -240,233 +227,332 @@ export default function MediaAssetsPage() {
   // Restrict access if not authenticated
   if (!isAuthenticated) {
     return (
-      <Card className="max-w-xl mx-auto mt-10">
-        <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-slate-600">
-            You must be signed in to view the Media Asset Library. Please sign in via the button in the navigation bar.
-          </p>
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-sm text-yellow-800">
-            <p className="font-medium">Client Role:</p>
-            <p>Clients can view and filter all content.</p>
-            <p className="font-medium mt-2">Admin Role:</p>
-            <p>Admins can view, filter, add, edit, and delete content.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="max-w-2xl mx-auto mt-16 px-4">
+        <Card className="border-l-4 border-l-amber-500 shadow-lg">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl font-semibold text-slate-900">Authentication Required</CardTitle>
+            <p className="text-slate-600 text-sm">
+              Access to the Media Asset Library requires authentication.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-100">
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                Access Levels
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 w-6 h-6 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-blue-700">C</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">Client Role</p>
+                    <p className="text-slate-600">View and filter all media content</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 w-6 h-6 rounded bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-indigo-700">A</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">Admin Role</p>
+                    <p className="text-slate-600">Full access to view, filter, add, edit, and delete content</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium" size="lg">
+              Sign In to Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6 fade-in">
+    <div className="space-y-5 fade-in pb-8">
 
-      {/* 1. HEADER & ACTION - Uses Sheet */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Media Library</h1>
-          <p className="text-slate-500">
-            {isAdmin ? "Admin: Full control over assets." : "Client: View and filter access only."}
-          </p>
+      {/* ENHANCED HEADER */}
+      <div className="bg-gradient-to-r from-slate-50 to-blue-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Media Asset Library</h1>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
+                isAdmin 
+                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                  : 'bg-blue-100 text-blue-700 border border-blue-200'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                {isAdmin ? 'Administrator' : 'Client'}
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-600">
+                {isAdmin ? 'Full access to all operations' : 'View & filter access'}
+              </span>
+            </div>
+          </div>
+
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                onClick={() => { setEditAsset(null); setIsSheetOpen(true); }}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-medium"
+                size="lg"
+                disabled={!isAdmin}
+              >
+                <Plus className="mr-2 h-4 w-4" /> New Asset
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="sm:max-w-md w-full md:w-[500px] lg:w-[600px] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-xl">{editAsset ? 'Edit Asset' : 'Create New Asset'}</SheetTitle>
+                <SheetDescription>
+                  Fill in the details below. Click save when you're done.
+                </SheetDescription>
+              </SheetHeader>
+              <MediaAssetForm
+                onSubmit={handleAssetSubmit}
+                onBulkSubmit={handleBulkSubmit}
+                initialValues={editAsset || undefined}
+                categories={categories}
+                buttonText={editAsset ? 'Save Changes' : 'Create Asset'}
+                onCancel={() => setIsSheetOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
-
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
-            {/* Only show the Add button if the user is Admin */}
-            <Button
-              onClick={() => { setEditAsset(null); setIsSheetOpen(true); }}
-              className="shadow-sm"
-              disabled={!isAdmin}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add New Asset
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="sm:max-w-md w-full md:w-[500px] lg:w-[600px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>{editAsset ? 'Edit Asset' : 'Create New Asset'}</SheetTitle>
-              <SheetDescription>
-                Fill in the details below. Click save when you're done.
-              </SheetDescription>
-            </SheetHeader>
-            <MediaAssetForm
-              onSubmit={handleAssetSubmit}
-              onBulkSubmit={handleBulkSubmit}
-              initialValues={editAsset || undefined}
-              categories={categories}
-              buttonText={editAsset ? 'Save Changes' : 'Create Asset'}
-              onCancel={() => setIsSheetOpen(false)}
-            />
-          </SheetContent>
-        </Sheet>
       </div>
 
-      {/* 2. ADVANCED FILTER BAR (Visible to all authenticated users) */}
-      <Card>
-        <CardHeader className="pb-3">
+      {/* ENHANCED FILTER BAR */}
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader className="pb-4 border-b border-slate-100">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Filter className="h-4 w-4 text-indigo-600" />
-              Advanced Filters
-            </CardTitle>
-            {(filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-red-500 hover:text-red-700 h-8 px-2">
-                <X className="h-3 w-3 mr-1" /> Reset
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Filter className="h-4 w-4 text-blue-700" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold text-slate-900">Filter & Search</CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {hasActiveFilters ? `${Object.keys({filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo}).filter(k => 
+                    (k === 'filterSubject' && filterSubject) ||
+                    (k === 'filterMainCat' && filterMainCat !== 'all') ||
+                    (k === 'filterSubCat' && filterSubCat !== 'all') ||
+                    (k === 'filterDuration' && filterDuration) ||
+                    (k === 'dateFrom' && dateFrom) ||
+                    (k === 'dateTo' && dateTo)
+                  ).length} active filter(s)` : 'No filters applied'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetFilters} 
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-3 font-medium"
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" /> Clear All
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-8 px-3 text-slate-600"
+              >
+                {showFilters ? 'Hide' : 'Show'}
               </Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        {showFilters && (
+          <CardContent className="pt-5 pb-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Subject Search */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Subject</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search subject..."
+                    value={filterSubject}
+                    onChange={(e) => setFilterSubject(e.target.value)}
+                    className="h-10 pl-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Main Category */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Genre (Main)</Label>
+                <Select value={filterMainCat} onValueChange={(val) => { setFilterMainCat(val); setFilterSubCat('all'); }}>
+                  <SelectTrigger className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="All Genres" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Genres</SelectItem>
+                    {mainCategories.map(c => (
+                      <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sub Category */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Item (Sub)</Label>
+                <Select
+                  value={filterSubCat}
+                  onValueChange={setFilterSubCat}
+                  disabled={filterMainCat === 'all'}
+                >
+                  <SelectTrigger className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50">
+                    <SelectValue placeholder="All Items" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Items</SelectItem>
+                    {availableSubCategories.map(c => (
+                      <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Duration</Label>
+                <Input
+                  placeholder="e.g. 10:30"
+                  value={filterDuration}
+                  onChange={(e) => setFilterDuration(e.target.value)}
+                  className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Date From */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">From Date</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">To Date</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* ENHANCED RESULTS CARD */}
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader className="pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                <Table2 className="h-4 w-4 text-slate-700" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  {loading ? 'Loading...' : `${totalAssets.toLocaleString()} Total Assets`}
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {loading ? 'Please wait' : `Showing ${assets.length} on page ${currentPage} of ${totalPages}`}
+                </p>
+              </div>
+            </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-3">
+                <Select value={assetsPerPage.toString()} onValueChange={(val) => { 
+                  setAssetsPerPage(parseInt(val));
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-[140px] h-9 border-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="25">25 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-slate-50">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                    className="h-7 w-7 p-0 hover:bg-white disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="px-3 text-sm font-medium text-slate-700 min-w-[60px] text-center">
+                    {currentPage} / {totalPages}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                    className="h-7 w-7 p-0 hover:bg-white disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            {/* Subject Search */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">Subject</Label>
-              <Input
-                placeholder="Search..."
-                value={filterSubject}
-                onChange={(e) => setFilterSubject(e.target.value)}
-                className="h-9"
-              />
-            </div>
 
-            {/* Main Category */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">Genre (Main)</Label>
-              <Select value={filterMainCat} onValueChange={(val) => { setFilterMainCat(val); setFilterSubCat('all'); }}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="All Genres" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genres</SelectItem>
-                  {mainCategories.map(c => (
-                    <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Sub Category */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">Item (Sub)</Label>
-              <Select
-                value={filterSubCat}
-                onValueChange={setFilterSubCat}
-                disabled={filterMainCat === 'all'}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="All Items" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Items</SelectItem>
-                  {availableSubCategories.map(c => (
-                    <SelectItem key={c._id} value={c._id!}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">Duration</Label>
-              <Input
-                placeholder="e.g. 10:30"
-                value={filterDuration}
-                onChange={(e) => setFilterDuration(e.target.value)}
-                className="h-9"
-              />
-            </div>
-
-            {/* Date From */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">From Date</Label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9"
-              />
-            </div>
-
-            {/* Date To */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-500">To Date</Label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* 2.5. PAGINATION CONTROLS */}
-      {totalPages > 1 && (
-          <div className="flex justify-between items-center gap-4 text-sm pt-2">
-              <Select value={assetsPerPage.toString()} onValueChange={(val) => { 
-                setAssetsPerPage(parseInt(val));
-                setCurrentPage(1); // Reset page when changing limit
-              }}>
-                <SelectTrigger className="w-[180px] h-9">
-                  <SelectValue placeholder="10 per page" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 per page</SelectItem>
-                  <SelectItem value="25">25 per page</SelectItem>
-                  <SelectItem value="50">50 per page</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-2">
-                <span className="text-slate-700 font-medium">
-                    Page **{currentPage}** of **{totalPages}** ({totalAssets} Assets)
-                </span>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1 || loading}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages || loading}
-                >
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-          </div>
-      )}
-
-
-      {/* 3. RESULTS LIST */}
-      <Card className="border-0 shadow-none bg-transparent">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center p-8 text-slate-500">
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Loading assets...
+            <div className="flex flex-col items-center justify-center py-16 space-y-3">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <p className="text-sm text-slate-600 font-medium">Loading assets...</p>
+            </div>
+          ) : assets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <LayoutGrid className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Assets Found</h3>
+              <p className="text-sm text-slate-600 max-w-md mb-4">
+                {hasActiveFilters 
+                  ? 'No media assets match your current filter criteria. Try adjusting your filters.' 
+                  : 'There are no media assets in the library yet. Start by adding your first asset.'}
+              </p>
+              {hasActiveFilters && (
+                <Button onClick={resetFilters} variant="outline" size="sm">
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
-            <>
-              <div className="mb-2 text-sm text-slate-500 text-right">
-                Showing {assets.length} results on this page
-              </div>
-              {assets.length === 0 ? (
-                <div className="text-center p-10 text-slate-500 border rounded-lg">
-                  No media assets found matching the current filters.
-                </div>
-              ) : (
-                <MediaAssetList
-                  assets={assets} // Now using the paginated 'assets' state
-                  onEdit={openEditSheet}
-                  onDelete={handleDeleteAsset}
-                />
-              )}
-            </>
+            <MediaAssetList
+              assets={assets}
+              onEdit={openEditSheet}
+              onDelete={handleDeleteAsset}
+            />
           )}
         </CardContent>
       </Card>
