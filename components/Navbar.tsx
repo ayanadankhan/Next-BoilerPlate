@@ -29,18 +29,19 @@ export default function Navbar() {
       icon: Users,
       active: pathname === '/users',
     },
-    {
-      href: '/media-assets',
-      label: 'Media Assets',
-      icon: Clapperboard,
-      active: pathname === '/media-assets',
-    },
-    {
+      {
       href: '/categories',
-      label: 'Categories',
+      label: 'Genere',
       icon: Layers,
       active: pathname === '/categories',
     },
+    {
+      href: '/media-assets',
+      label: 'Items',
+      icon: Clapperboard,
+      active: pathname === '/media-assets',
+    }
+  
   ];
 
   const handleLogout = () => {

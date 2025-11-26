@@ -75,7 +75,7 @@ export default function CategoryForm({
     <form onSubmit={handleSubmit} className="space-y-6 pt-6">
       {/* Category Name */}
       <div className="grid gap-2">
-        <Label htmlFor="category-name">Category Name</Label>
+        <Label htmlFor="category-name">Genre Name</Label>
         <Input
           id="category-name"
           placeholder="e.g., Documentary, Action, News"
@@ -93,7 +93,7 @@ export default function CategoryForm({
           onValueChange={(value) => setParentId(value === 'none' ? null : value)}
         >
           <SelectTrigger id="parent-category">
-            <SelectValue placeholder="Select a parent category (Main Genre)" />
+            <SelectValue placeholder="Select a parent Genre (Main Genre)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">

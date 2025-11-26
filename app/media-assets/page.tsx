@@ -177,7 +177,7 @@ export default function MediaAssetsPage() {
         setCurrentPage(1);
         setIsSheetOpen(false);
         setEditAsset(null);
-        alert(`Successfully imported ${bulkData.length} assets.`);
+        alert(`Successfully imported ${bulkData.length} items.`);
       } else {
         alert("Bulk import failed.");
       }
@@ -192,7 +192,7 @@ export default function MediaAssetsPage() {
       alert("You do not have permission to perform this action.");
       return;
     }
-    if (!confirm("Are you sure you want to delete this asset?")) return;
+    if (!confirm("Are you sure you want to delete this item?")) return;
     try {
       const response = await fetch(`/api/media-assets/${assetId}`, { method: 'DELETE' });
       if (response.ok) {
@@ -207,7 +207,7 @@ export default function MediaAssetsPage() {
 
   const openEditSheet = (asset: MediaAssetData) => {
     if (!isAdmin) {
-      alert("You must be an Admin to edit assets.");
+      alert("You must be an Admin to edit item.");
       return;
     }
     setEditAsset(asset);
@@ -232,7 +232,7 @@ export default function MediaAssetsPage() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-slate-900">Authentication Required</CardTitle>
             <p className="text-slate-600 text-sm">
-              Access to the Media Asset Library requires authentication.
+              Access to the Items Library requires authentication.
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -278,7 +278,7 @@ export default function MediaAssetsPage() {
       <div className="bg-gradient-to-r from-slate-50 to-blue-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Media Asset Library</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Items Library</h1>
             <div className="flex items-center gap-2 text-sm">
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
                 isAdmin 
@@ -303,12 +303,12 @@ export default function MediaAssetsPage() {
                 size="lg"
                 disabled={!isAdmin}
               >
-                <Plus className="mr-2 h-4 w-4" /> New Asset
+                <Plus className="mr-2 h-4 w-4" /> New Item
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-md w-full md:w-[500px] lg:w-[600px] overflow-y-auto">
               <SheetHeader>
-                <SheetTitle className="text-xl">{editAsset ? 'Edit Asset' : 'Create New Asset'}</SheetTitle>
+                <SheetTitle className="text-xl">{editAsset ? 'Edit Asset' : 'Create New Item'}</SheetTitle>
                 <SheetDescription>
                   Fill in the details below. Click save when you're done.
                 </SheetDescription>
@@ -318,7 +318,7 @@ export default function MediaAssetsPage() {
                 onBulkSubmit={handleBulkSubmit}
                 initialValues={editAsset || undefined}
                 categories={categories}
-                buttonText={editAsset ? 'Save Changes' : 'Create Asset'}
+                buttonText={editAsset ? 'Save Changes' : 'Create Item'}
                 onCancel={() => setIsSheetOpen(false)}
               />
             </SheetContent>
@@ -471,7 +471,7 @@ export default function MediaAssetsPage() {
               </div>
               <div>
                 <CardTitle className="text-base font-semibold text-slate-900">
-                  {loading ? 'Loading...' : `${totalAssets.toLocaleString()} Total Assets`}
+                  {loading ? 'Loading...' : `${totalAssets.toLocaleString()} Total Items`}
                 </CardTitle>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {loading ? 'Please wait' : `Showing ${assets.length} on page ${currentPage} of ${totalPages}`}

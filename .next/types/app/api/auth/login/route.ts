@@ -1,8 +1,8 @@
-// File: C:\next js\its-working\Next-BoilerPlate\app\api\users\[id]\route.ts
-import * as entry from '../../../../../../app/api/users/[id]/route.js'
+// File: C:\next js\its-working\Next-BoilerPlate\app\api\auth\login\route.ts
+import * as entry from '../../../../../../app/api/auth/login/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../../app/api/users/[id]/route.js')
+type TEntry = typeof import('../../../../../../app/api/auth/login/route.js')
 
 // Check that the entry is a valid entry
 checkFields<Diff<{

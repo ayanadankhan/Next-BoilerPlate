@@ -1,21 +1,19 @@
 import mongoose, { Schema, Document, models, model } from 'mongoose';
 
-// Interface for the User document
 export interface IUser extends Document {
-  username: string;
+  name: string;      // CHANGED: username -> name
   email: string;
-  password?: string; // Stored hash
-  role: 'client' | 'admin';
+  password?: string; // CHANGED: Made optional (?)
+  role: 'user' | 'admin' | 'editor'; // CHANGED: Updated roles
 }
 
 const UserSchema: Schema = new Schema(
   {
-    username: {
+    name: {
       type: String,
-      required: [true, 'Please provide a username'],
-      unique: true,
+      required: [true, 'Please provide a name'],
       trim: true,
-      maxlength: [40, 'Username cannot be more than 40 characters'],
+      maxlength: [40, 'Name cannot be more than 40 characters'],
     },
     email: {
       type: String,
@@ -29,12 +27,12 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: false, // CHANGED: Set to false so you can create users without passwords
     },
     role: {
       type: String,
-      enum: ['client', 'admin'],
-      default: 'client',
+      enum: ['user', 'admin', 'editor'], // CHANGED: Added 'user' and 'editor'
+      default: 'user',
     },
   },
   {
@@ -42,5 +40,6 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Prevent duplicate model error in development with hot reloading
+// Important: Next.js hot reloading can sometimes mess up model re-compilation.
+// If this still fails, try restarting your dev server.
 export default models.User || model<IUser>('User', UserSchema);

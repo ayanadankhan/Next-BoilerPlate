@@ -49,7 +49,7 @@ export default function CategoryList({
         <TableHeader>
           <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
             <TableHead className="font-semibold text-slate-700 py-3.5 w-[35%]">
-              Category Name
+              Genre Name
             </TableHead>
             <TableHead className="font-semibold text-slate-700 py-3.5 w-[30%]">
               <div className="flex items-center gap-1.5">
@@ -70,7 +70,7 @@ export default function CategoryList({
           {categories.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="h-32 text-center text-slate-500">
-                No categories to display
+                No Genre to display
               </TableCell>
             </TableRow>
           ) : (
@@ -120,7 +120,7 @@ export default function CategoryList({
                           : 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200'
                       }`}
                     >
-                      {isMain ? 'Main Genre' : 'Sub-Category'}
+                      {isMain ? 'Genre' : 'Sub-Genre'}
                     </Badge>
                   </TableCell>
                   <TableCell className="py-3.5 text-center">
@@ -154,7 +154,7 @@ export default function CategoryList({
                             className="cursor-pointer focus:bg-indigo-50 focus:text-indigo-900"
                           >
                             <Pencil className="mr-2 h-4 w-4" /> 
-                            Edit Category
+                            Edit Genre
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -162,7 +162,7 @@ export default function CategoryList({
                             className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> 
-                            Delete Category
+                            Delete Genre
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

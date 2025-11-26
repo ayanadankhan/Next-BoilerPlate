@@ -91,7 +91,7 @@ const formatDate = (dateString: string): string => {
           {assets.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="h-32 text-center text-slate-500">
-                No assets to display
+                No item to display
               </TableCell>
             </TableRow>
           ) : (
@@ -154,7 +154,7 @@ const formatDate = (dateString: string): string => {
                           className="cursor-pointer focus:bg-blue-50 focus:text-blue-900"
                         >
                           <Pencil className="mr-2 h-4 w-4" /> 
-                          Edit Asset
+                          Edit Item
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
@@ -162,7 +162,7 @@ const formatDate = (dateString: string): string => {
                           className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> 
-                          Delete Asset
+                          Delete Item
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

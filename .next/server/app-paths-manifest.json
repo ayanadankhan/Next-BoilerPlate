@@ -1,8 +1,10 @@
 {
-  "/media-assets/page": "app/media-assets/page.js",
-  "/categories/page": "app/categories/page.js",
   "/users/page": "app/users/page.js",
+  "/api/users/route": "app/api/users/route.js",
   "/page": "app/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/categories/page": "app/categories/page.js",
   "/api/categories/route": "app/api/categories/route.js",
+  "/media-assets/page": "app/media-assets/page.js",
   "/api/media-assets/route": "app/api/media-assets/route.js"
 }

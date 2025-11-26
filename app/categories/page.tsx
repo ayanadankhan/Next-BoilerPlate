@@ -191,7 +191,7 @@ export default function CategoriesPage() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-semibold text-slate-900">Authentication Required</CardTitle>
             <p className="text-slate-600 text-sm">
-              Access to Category Management requires authentication.
+              Access to Genre Management requires authentication.
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -207,7 +207,7 @@ export default function CategoriesPage() {
                   </div>
                   <div>
                     <p className="font-medium text-slate-900">Client Role</p>
-                    <p className="text-slate-600">Clients are typically restricted from category management</p>
+                    <p className="text-slate-600">Clients are typically restricted from Genre management</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -216,7 +216,7 @@ export default function CategoriesPage() {
                   </div>
                   <div>
                     <p className="font-medium text-slate-900">Admin Role</p>
-                    <p className="text-slate-600">Full access to add, edit, and delete categories and sub-categories</p>
+                    <p className="text-slate-600">Full access to add, edit, and delete Genre and sub-Genre</p>
                   </div>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function CategoriesPage() {
       <div className="bg-gradient-to-r from-slate-50 to-indigo-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Category Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Genre Management</h1>
             <div className="flex items-center gap-2 text-sm">
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
                 isAdmin 
@@ -250,7 +250,7 @@ export default function CategoriesPage() {
               </span>
               <span className="text-slate-400">•</span>
               <span className="text-slate-600">
-                {isAdmin ? 'Full category management access' : 'Access restricted'}
+                {isAdmin ? 'Full Genre management access' : 'Access restricted'}
               </span>
             </div>
           </div>
@@ -263,17 +263,17 @@ export default function CategoriesPage() {
                 onClick={() => { setEditCategory(null); setIsSheetOpen(true); }}
                 disabled={!isAdmin}
               >
-                <Plus className="mr-2 h-4 w-4" /> New Category
+                <Plus className="mr-2 h-4 w-4" /> New Genre
               </Button>
             </SheetTrigger>
 
             <SheetContent side="right" className="sm:max-w-md w-full md:w-[520px] overflow-y-auto">
               <SheetHeader>
                 <SheetTitle className="text-xl">
-                  {editCategory ? 'Edit Category' : 'Create New Category'}
+                  {editCategory ? 'Edit Category' : 'Create New Genre'}
                 </SheetTitle>
                 <SheetDescription className="text-sm text-slate-500">
-                  Define the category name and its parent, if applicable.
+                  Define the Genre name and its parent, if applicable.
                 </SheetDescription>
               </SheetHeader>
 
@@ -356,7 +356,7 @@ export default function CategoriesPage() {
 
               {/* Main Category */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Main Category</Label>
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Main Genre</Label>
                 <Select
                   value={filterMainCategory}
                   onValueChange={(val) => { setFilterMainCategory(val); setFilterSubCategory('all'); }}
@@ -365,7 +365,7 @@ export default function CategoriesPage() {
                     <SelectValue placeholder="All Main Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Main Categories</SelectItem>
+                    <SelectItem value="all">All Main Genre</SelectItem>
                     {mainCategories.filter(mc => mc._id).map((mc) => (
                       <SelectItem key={mc._id} value={mc._id!}>{mc.name}</SelectItem>
                     ))}
@@ -375,7 +375,7 @@ export default function CategoriesPage() {
 
               {/* Sub Category */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Sub-Category</Label>
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Sub-Genre</Label>
                 <Select
                   disabled={filterMainCategory === 'all'}
                   value={filterSubCategory}
@@ -385,7 +385,7 @@ export default function CategoriesPage() {
                     <SelectValue placeholder={filterMainCategory === 'all' ? 'Select main first' : 'All Sub-Categories'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Sub-Categories</SelectItem>
+                    <SelectItem value="all">All Sub-Genre</SelectItem>
                     {subCategoriesForSelectedMain.filter(sc => sc._id).map((sc) => (
                       <SelectItem key={sc._id} value={sc._id!}>{sc.name}</SelectItem>
                     ))}
@@ -407,10 +407,10 @@ export default function CategoriesPage() {
               </div>
               <div>
                 <CardTitle className="text-base font-semibold text-slate-900">
-                  {loading ? 'Loading...' : `${categories.length} Total Categories`}
+                  {loading ? 'Loading...' : `${categories.length} Total Genre`}
                 </CardTitle>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {loading ? 'Please wait' : `Showing ${filteredCategories.length} categor${filteredCategories.length === 1 ? 'y' : 'ies'}`}
+                  {loading ? 'Please wait' : `Showing ${filteredCategories.length} genre${filteredCategories.length === 1 ? '' : 's'}`}
                 </p>
               </div>
             </div>
@@ -434,14 +434,14 @@ export default function CategoriesPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-3">
               <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-              <p className="text-sm text-slate-600 font-medium">Loading categories...</p>
+              <p className="text-sm text-slate-600 font-medium">Loading Genre...</p>
             </div>
           ) : filteredCategories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
               <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                 <FolderTree className="h-8 w-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Categories Found</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Genre Found</h3>
               <p className="text-sm text-slate-600 max-w-md mb-4">
                 {hasActiveFilters 
                   ? 'No categories match your current filter criteria. Try adjusting your filters.' 
@@ -468,7 +468,7 @@ export default function CategoriesPage() {
       <div className="flex items-start gap-2 text-sm text-slate-500 bg-blue-50 border border-blue-100 rounded-lg p-3">
         <div className="w-1 h-1 rounded-full bg-blue-400 mt-2"></div>
         <p>
-          <span className="font-medium text-slate-700">Tip:</span> Use the filter bar to quickly narrow down categories. Selecting a main category will enable its sub-category filter.
+          <span className="font-medium text-slate-700">Tip:</span> Use the filter bar to quickly narrow down Genre. Selecting a main Genre will enable its sub-Genre filter.
         </p>
       </div>
     </div>
