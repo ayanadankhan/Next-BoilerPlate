@@ -43,7 +43,8 @@ export default function MediaAssetsPage() {
   const [filterSubject, setFilterSubject] = useState('');
   const [filterMainCat, setFilterMainCat] = useState<string>('all');
   const [filterSubCat, setFilterSubCat] = useState<string>('all');
-  const [filterDuration, setFilterDuration] = useState('');
+  const [minDuration, setMinDuration] = useState('');
+  const [maxDuration, setMaxDuration] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
@@ -54,20 +55,21 @@ export default function MediaAssetsPage() {
   const totalPages = Math.ceil(totalAssets / assetsPerPage);
 
   // Check if any filters are active
-  const hasActiveFilters = filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo;
+  const hasActiveFilters = filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || minDuration || maxDuration || dateFrom || dateTo;
 
   // --- Server-Side Fetch Effect ---
   useEffect(() => {
     const buildApiUrl = () => {
       const params = new URLSearchParams();
-      
+
       params.append('page', currentPage.toString());
       params.append('limit', assetsPerPage.toString());
 
       if (filterSubject) params.append('subject', filterSubject);
       if (filterMainCat !== 'all') params.append('mainCat', filterMainCat);
       if (filterSubCat !== 'all') params.append('subCat', filterSubCat);
-      if (filterDuration) params.append('duration', filterDuration);
+      if (minDuration) params.append('minDuration', minDuration);
+      if (maxDuration) params.append('maxDuration', maxDuration);
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
 
@@ -99,19 +101,19 @@ export default function MediaAssetsPage() {
         setLoading(false);
       }
     };
-    
+
     const isFilterChanged = () => {
-        return filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || filterDuration || dateFrom || dateTo;
+      return filterSubject || filterMainCat !== 'all' || filterSubCat !== 'all' || minDuration || maxDuration || dateFrom || dateTo;
     }
-    
+
     if (currentPage > 1 && isFilterChanged()) {
-        setCurrentPage(1);
+      setCurrentPage(1);
     } else {
-        fetchData();
+      fetchData();
     }
   }, [
     currentPage, assetsPerPage, categories.length,
-    filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo 
+    filterSubject, filterMainCat, filterSubCat, minDuration, maxDuration, dateFrom, dateTo
   ]);
 
   // --- Derived Data for Dropdowns ---
@@ -127,7 +129,8 @@ export default function MediaAssetsPage() {
     setFilterSubject('');
     setFilterMainCat('all');
     setFilterSubCat('all');
-    setFilterDuration('');
+    setMinDuration('');
+    setMaxDuration('');
     setDateFrom('');
     setDateTo('');
     setCurrentPage(1);
@@ -150,7 +153,7 @@ export default function MediaAssetsPage() {
       });
 
       if (response.ok) {
-        setCurrentPage(1); 
+        setCurrentPage(1);
         setIsSheetOpen(false);
         setEditAsset(null);
       } else {
@@ -280,11 +283,10 @@ export default function MediaAssetsPage() {
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Items Library</h1>
             <div className="flex items-center gap-2 text-sm">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
-                isAdmin 
-                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
-                  : 'bg-blue-100 text-blue-700 border border-blue-200'
-              }`}>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${isAdmin
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                 {isAdmin ? 'Administrator' : 'Client'}
               </span>
@@ -337,11 +339,12 @@ export default function MediaAssetsPage() {
               <div>
                 <CardTitle className="text-base font-semibold text-slate-900">Filter & Search</CardTitle>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {hasActiveFilters ? `${Object.keys({filterSubject, filterMainCat, filterSubCat, filterDuration, dateFrom, dateTo}).filter(k => 
+                  {hasActiveFilters ? `${Object.keys({ filterSubject, filterMainCat, filterSubCat, minDuration, maxDuration, dateFrom, dateTo }).filter(k =>
                     (k === 'filterSubject' && filterSubject) ||
                     (k === 'filterMainCat' && filterMainCat !== 'all') ||
                     (k === 'filterSubCat' && filterSubCat !== 'all') ||
-                    (k === 'filterDuration' && filterDuration) ||
+                    (k === 'minDuration' && minDuration) ||
+                    (k === 'maxDuration' && maxDuration) ||
                     (k === 'dateFrom' && dateFrom) ||
                     (k === 'dateTo' && dateTo)
                   ).length} active filter(s)` : 'No filters applied'}
@@ -350,10 +353,10 @@ export default function MediaAssetsPage() {
             </div>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={resetFilters} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-3 font-medium"
                 >
                   <X className="h-3.5 w-3.5 mr-1.5" /> Clear All
@@ -370,7 +373,7 @@ export default function MediaAssetsPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         {showFilters && (
           <CardContent className="pt-5 pb-5">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -424,16 +427,25 @@ export default function MediaAssetsPage() {
                 </Select>
               </div>
 
-              {/* Duration */}
+              {/* Duration Range */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Duration</Label>
-                <Input
-                  placeholder="e.g. 10:30"
-                  value={filterDuration}
-                  onChange={(e) => setFilterDuration(e.target.value)}
-                  className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                />
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Duration Range</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Min (e.g. 5:00)"
+                    value={minDuration}
+                    onChange={(e) => setMinDuration(e.target.value)}
+                    className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <Input
+                    placeholder="Max (e.g. 15:00)"
+                    value={maxDuration}
+                    onChange={(e) => setMaxDuration(e.target.value)}
+                    className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
               </div>
+
 
               {/* Date From */}
               <div className="space-y-2">
@@ -478,11 +490,11 @@ export default function MediaAssetsPage() {
                 </p>
               </div>
             </div>
-            
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex items-center gap-3">
-                <Select value={assetsPerPage.toString()} onValueChange={(val) => { 
+                <Select value={assetsPerPage.toString()} onValueChange={(val) => {
                   setAssetsPerPage(parseInt(val));
                   setCurrentPage(1);
                 }}>
@@ -537,8 +549,8 @@ export default function MediaAssetsPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">No Assets Found</h3>
               <p className="text-sm text-slate-600 max-w-md mb-4">
-                {hasActiveFilters 
-                  ? 'No media assets match your current filter criteria. Try adjusting your filters.' 
+                {hasActiveFilters
+                  ? 'No media assets match your current filter criteria. Try adjusting your filters.'
                   : 'There are no media assets in the library yet. Start by adding your first asset.'}
               </p>
               {hasActiveFilters && (

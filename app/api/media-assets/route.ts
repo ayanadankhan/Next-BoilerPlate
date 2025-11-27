@@ -20,11 +20,12 @@ export async function GET(req: NextRequest) {
         const filterSubject = searchParams.get('subject') || '';
         const filterMainCatId = searchParams.get('mainCat') || 'all';
         const filterSubCatId = searchParams.get('subCat') || 'all';
-        const filterDuration = searchParams.get('duration') || '';
+        const minDuration = searchParams.get('minDuration') || '';
+        const maxDuration = searchParams.get('maxDuration') || '';
         const dateFrom = searchParams.get('dateFrom') || '';
         const dateTo = searchParams.get('dateTo') || '';
         const sortOrder = searchParams.get('sort') || 'createdAt'; // Default sort
-        
+
         // 2. Build the MongoDB Query Object
         const query: FilterQuery<any> = {};
 
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
         // It's often easier if the client sends the *name* or an array of *Category IDs*.
         if (filterSubCatId !== 'all') {
             // Priority to sub-category ID
-            query.categoryId = filterSubCatId; 
+            query.categoryId = filterSubCatId;
         } else if (filterMainCatId !== 'all') {
             // Find assets by main category name (if sub-category is 'all')
             // This requires you to pass the main category *name* (genre) to the asset
@@ -59,9 +60,10 @@ export async function GET(req: NextRequest) {
             ];
         }
 
-        // Duration Filter (Exact match on duration string - you might need a more complex $regex here)
-        if (filterDuration) {
-            query.duration = filterDuration;
+        if (minDuration || maxDuration) {
+            query.duration = {};
+            if (minDuration) query.duration.$gte = minDuration;
+            if (maxDuration) query.duration.$lte = maxDuration;
         }
 
         // Date Range Filter
@@ -78,7 +80,7 @@ export async function GET(req: NextRequest) {
                 query.creationDate.$lte = endOfDay;
             }
         }
-        
+
         // 3. Execute the Database Query
         const totalAssets = await MediaAsset.countDocuments(query);
         const mediaAssets = await MediaAsset.find(query)
@@ -102,18 +104,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    await dbConnect();
+    try {
+        const body = await req.json();
+        await dbConnect();
 
-    if (Array.isArray(body)) {
-      const mediaAssets = await MediaAsset.insertMany(body);
-      return NextResponse.json({ mediaAssets }, { status: 201 });
-    } else {
-      const mediaAsset = await MediaAsset.create(body);
-      return NextResponse.json({ mediaAsset }, { status: 201 });
+        if (Array.isArray(body)) {
+            const mediaAssets = await MediaAsset.insertMany(body);
+            return NextResponse.json({ mediaAssets }, { status: 201 });
+        } else {
+            const mediaAsset = await MediaAsset.create(body);
+            return NextResponse.json({ mediaAsset }, { status: 201 });
+        }
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Failed to create media asset' }, { status: 500 });
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to create media asset' }, { status: 500 });
-  }
 }

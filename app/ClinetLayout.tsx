@@ -37,4 +37,5 @@ export default function Content({ children }: { children: React.ReactNode; }) {
             </Fragment>
         );
     }
+    return null;
 }
