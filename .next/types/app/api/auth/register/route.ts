@@ -1,4 +1,4 @@
-// File: C:\next js\its-working\Next-BoilerPlate\app\api\auth\register\route.ts
+// File: D:\BitsBuffer\Next-BoilerPlate\app\api\auth\register\route.ts
 import * as entry from '../../../../../../app/api/auth/register/route.js'
 import type { NextRequest } from 'next/server.js'
 

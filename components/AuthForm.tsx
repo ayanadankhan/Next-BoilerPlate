@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../app/context/AuthContext'; // Import useAuth
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,32 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { login, register, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/users');
+      if (res.ok) {
+        const data = await res.json();
+        console.log("data", data);
+        if (data.users.length === 0) {
+          await register({ username: "Admin", email: "admin@fcce.com", password: "Hello@123" })
+        }
+        setError(null);
+      } else {
+        const errorData = await res.json();
+        setError(errorData.error || 'Failed to fetch users');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred during fetch.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchUsers() }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +84,11 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           {!isLogin && (
             <div className="grid gap-2">
               <Label htmlFor="username">Username</Label>
-              <Input 
-                id="username" 
-                type="text" 
-                placeholder="john.doe" 
-                value={username} 
+              <Input
+                id="username"
+                type="text"
+                placeholder="john.doe"
+                value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required={!isLogin}
               />
@@ -70,21 +96,21 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           )}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="m@example.com" 
-              value={email} 
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              value={password} 
+            <Input
+              id="password"
+              type="password"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
