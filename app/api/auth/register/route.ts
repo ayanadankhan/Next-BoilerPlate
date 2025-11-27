@@ -8,15 +8,16 @@ import User, { IUser } from '@/models/User';
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { username, email, password } = await req.json();
+    const { name, email, password } = await req.json();
 
-    if (!username || !email || !password) {
+    if (!name || !email || !password) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { name }] });
+    console.log("existingUser", existingUser);
     if (existingUser) {
-      return NextResponse.json({ error: 'User with this email or username already exists' }, { status: 409 });
+      return NextResponse.json({ error: 'User with this email or name already exists' }, { status: 409 });
     }
 
     // --- In a real app, use a proper hashing library like bcrypt here ---
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     
     // Create the new user
     const newUser = await User.create({
-      username,
+      name,
       email,
       password, // Storing plain text for this environment ONLY
       role: 'client', // Default to client role
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     console.error('Registration error:', error);
     // Handle validation errors or duplicate key errors gracefully
     if (error.code === 11000) {
-       return NextResponse.json({ error: 'Duplicate username or email' }, { status: 409 });
+       return NextResponse.json({ error: 'Duplicate name or email' }, { status: 409 });
     }
     return NextResponse.json({ error: 'An internal server error occurred' }, { status: 500 });
   }

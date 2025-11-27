@@ -15,7 +15,7 @@ interface AuthFormProps {
 export default function AuthForm({ onSuccess }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const { login, register, isLoading } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
         const data = await res.json();
         console.log("data", data);
         if (data.users.length === 0) {
-          await register({ username: "Admin", email: "admin@fcce.com", password: "Hello@123" })
+          await register({ name: "Admin", email: "admin@fcce.com", password: "Hello@123" })
         }
         setError(null);
       } else {
@@ -53,7 +53,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
     if (isLogin) {
       success = await login({ email, password });
     } else {
-      success = await register({ username, email, password });
+      success = await register({ name, email, password });
     }
 
     if (success) {
@@ -64,7 +64,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
   const toggleMode = () => {
     setIsLogin(prev => !prev);
     setEmail('');
-    setUsername('');
+    setName('');
     setPassword('');
   };
 
@@ -83,13 +83,13 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
         <CardContent className="grid gap-4">
           {!isLogin && (
             <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="name">name</Label>
               <Input
-                id="username"
+                id="name"
                 type="text"
                 placeholder="john.doe"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required={!isLogin}
               />
             </div>

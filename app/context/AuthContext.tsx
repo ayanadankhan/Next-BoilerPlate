@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 // Simplified type for user data (excluding password)
 export interface AuthUser {
   _id: string;
-  username: string;
+  name: string;
   email: string;
   role: 'client' | 'admin';
 }
