@@ -233,18 +233,18 @@ export default function CategoriesPage() {
   // Main layout
   return (
     <div className="space-y-5 fade-in pb-8">
-      
+
       {/* ENHANCED HEADER */}
-      <div className="bg-gradient-to-r from-slate-50 to-indigo-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
+      <div className="bg-gradient-to-r from-slate-50 to-indigo-50  -mt-6 px-6 py-6 border-b border-slate-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Genre Management</h1>
             <div className="flex items-center gap-2 text-sm">
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
                 isAdmin 
-                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
                   : 'bg-amber-100 text-amber-700 border border-amber-200'
-              }`}>
+                }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                 {isAdmin ? 'Administrator' : 'Client'}
               </span>
@@ -308,10 +308,10 @@ export default function CategoriesPage() {
             </div>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={resetFilters} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-3 font-medium"
                 >
                   <X className="h-3.5 w-3.5 mr-1.5" /> Clear All
@@ -443,8 +443,8 @@ export default function CategoriesPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">No Genre Found</h3>
               <p className="text-sm text-slate-600 max-w-md mb-4">
-                {hasActiveFilters 
-                  ? 'No categories match your current filter criteria. Try adjusting your filters.' 
+                {hasActiveFilters
+                  ? 'No categories match your current filter criteria. Try adjusting your filters.'
                   : 'There are no categories yet. Start by creating your first category.'}
               </p>
               {hasActiveFilters && (

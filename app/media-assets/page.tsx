@@ -278,7 +278,7 @@ export default function MediaAssetsPage() {
     <div className="space-y-5 fade-in pb-8">
 
       {/* ENHANCED HEADER */}
-      <div className="bg-gradient-to-r from-slate-50 to-blue-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
+      <div className="bg-gradient-to-r from-slate-50 to-blue-50 -mt-6 px-6 py-6 border-b border-slate-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Items Library</h1>
