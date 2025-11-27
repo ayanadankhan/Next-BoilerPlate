@@ -1,4 +1,4 @@
-// File: C:\next js\its-working\Next-BoilerPlate\app\categories\page.tsx
+// File: D:\BitsBuffer\Next-BoilerPlate\app\categories\page.tsx
 import * as entry from '../../../../app/categories/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

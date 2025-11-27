@@ -1,4 +1,4 @@
-// File: C:\next js\its-working\Next-BoilerPlate\app\layout.tsx
+// File: D:\BitsBuffer\Next-BoilerPlate\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
