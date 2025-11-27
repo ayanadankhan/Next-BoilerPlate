@@ -445,7 +445,7 @@ export default function MediaAssetForm({
           </Button>
         )}
         <Button type="submit">
-          {bulkData.length > 0 ? `Import ${bulkData.length} Assets` : buttonText}
+          {bulkData.length > 0 ? `Import ${bulkData.length} Items` : buttonText}
         </Button>
       </div>
     </form>

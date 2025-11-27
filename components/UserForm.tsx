@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/select';
 
 export interface UserData {
-  _id?: string;
+  _id?: string; // Mongoose uses _id
   name: string;
   email: string;
-  role: 'user' | 'admin' | 'editor'; // Explicitly defined roles
+  role: 'user' | 'admin' | 'editor';
 }
 
 interface UserFormProps {

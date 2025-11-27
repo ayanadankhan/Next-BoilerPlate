@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Filter, X, Loader2, Edit2, Trash2 } from "lucide-react";
+import { Plus, Filter, X, Loader2, Search, FolderTree, Layers } from "lucide-react";
 
 import {
   Sheet,
@@ -38,11 +38,15 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryData | null>(null);
+  const [showFilters, setShowFilters] = useState(true);
 
   // Filters
   const [filterName, setFilterName] = useState('');
   const [filterMainCategory, setFilterMainCategory] = useState<string>('all');
   const [filterSubCategory, setFilterSubCategory] = useState<string>('all');
+
+  // Check if filters are active
+  const hasActiveFilters = filterName || filterMainCategory !== 'all' || filterSubCategory !== 'all';
 
   // Derived lists
   const mainCategories = useMemo(() => categories.filter(c => !c.parentId), [categories]);
@@ -173,61 +177,103 @@ export default function CategoriesPage() {
   // Auth UI states
   if (isAuthLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh] text-slate-500">
-        <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Loading Authentication...
+      <div className="flex flex-col justify-center items-center h-[60vh] space-y-3">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <p className="text-sm text-slate-600 font-medium">Authenticating...</p>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="max-w-2xl mx-auto mt-12 px-4">
-        <div className="rounded-lg bg-white shadow-sm border border-slate-100 p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Access Denied</h2>
-          <p className="mt-2 text-sm text-slate-600">You must be signed in to view Category Management.</p>
-
-          <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-sm text-yellow-800 rounded">
-            <p className="font-medium">Client Role:</p>
-            <p>Clients are typically restricted from viewing this management page.</p>
-            <p className="font-medium mt-2">Admin Role:</p>
-            <p>Admins have full control over categories (Add, Edit, Delete).</p>
-          </div>
-        </div>
+      <div className="max-w-2xl mx-auto mt-16 px-4">
+        <Card className="border-l-4 border-l-amber-500 shadow-lg">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl font-semibold text-slate-900">Authentication Required</CardTitle>
+            <p className="text-slate-600 text-sm">
+              Access to Genre Management requires authentication.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-5 border border-amber-100">
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-amber-600 rounded-full"></span>
+                Access Level
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 w-6 h-6 rounded bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-amber-700">C</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">Client Role</p>
+                    <p className="text-slate-600">Clients are typically restricted from Genre management</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 w-6 h-6 rounded bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-indigo-700">A</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">Admin Role</p>
+                    <p className="text-slate-600">Full access to add, edit, and delete Genre and sub-Genre</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium" size="lg">
+              Sign In to Continue
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   // Main layout
   return (
-    <div className="w-100 mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold leading-tight text-slate-900">Category Management</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isAdmin ? 'Admin: Full control over categories.' : 'Access restricted to Administrators.'}
-          </p>
-        </div>
+    <div className="space-y-5 fade-in pb-8">
+      
+      {/* ENHANCED HEADER */}
+      <div className="bg-gradient-to-r from-slate-50 to-indigo-50 -mx-6 -mt-6 px-6 py-6 border-b border-slate-200">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Genre Management</h1>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
+                isAdmin 
+                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                  : 'bg-amber-100 text-amber-700 border border-amber-200'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                {isAdmin ? 'Administrator' : 'Client'}
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-600">
+                {isAdmin ? 'Full Genre management access' : 'Access restricted'}
+              </span>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
-                className="shadow-sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm font-medium"
+                size="lg"
                 onClick={() => { setEditCategory(null); setIsSheetOpen(true); }}
                 disabled={!isAdmin}
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Category
+                <Plus className="mr-2 h-4 w-4" /> New Genre
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="sm:max-w-md w-full md:w-[520px]">
+            <SheetContent side="right" className="sm:max-w-md w-full md:w-[520px] overflow-y-auto">
               <SheetHeader>
-                <SheetTitle className="text-lg font-medium">
-                  {editCategory ? 'Edit Category' : 'Create New Category'}
+                <SheetTitle className="text-xl">
+                  {editCategory ? 'Edit Category' : 'Create New Genre'}
                 </SheetTitle>
                 <SheetDescription className="text-sm text-slate-500">
-                  Define the category name and its parent, if applicable.
+                  Define the Genre name and its parent, if applicable.
                 </SheetDescription>
               </SheetHeader>
 
@@ -245,143 +291,185 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Toolbar / Filters (Option B style: soft background, subtle border) */}
-      <div className="bg-white border border-slate-100 rounded-md shadow-sm p-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          {/* Left: toolbar controls */}
-          <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-full md:w-[420px]">
-  <Label className="text-xs text-slate-500 mb-1 block">Search</Label>
-
-  <div className="flex items-center h-9 bg-white border border-slate-200 rounded-md px-3">
-    <Filter className="h-4 w-4 text-slate-400 mr-2" />
-
-    <Input
-      value={filterName}
-      onChange={(e) => setFilterName(e.target.value)}
-      placeholder="Search categories..."
-      className="h-8 bg-transparent placeholder:text-slate-400 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-      aria-label="Search categories"
-    />
-
-    {filterName && (
-      <button
-        onClick={() => setFilterName("")}
-        className="text-slate-400 hover:text-slate-600 ml-2"
-        aria-label="Clear search"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    )}
-  </div>
-</div>
-
-            {/* Main category */}
-            <div className="w-48">
-              <Label className="text-xs text-slate-500 mb-1">Main</Label>
-              <Select
-                value={filterMainCategory}
-                onValueChange={(val) => { setFilterMainCategory(val); setFilterSubCategory('all'); }}
-              >
-                <SelectTrigger className="h-9 rounded-md border border-slate-100 bg-white">
-                  <SelectValue placeholder="All Main" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Main</SelectItem>
-                  {mainCategories.filter(mc => mc._id).map((mc) => (
-                    <SelectItem key={mc._id} value={mc._id!}>{mc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Sub category */}
-            <div className="w-48">
-              <Label className="text-xs text-slate-500 mb-1">Sub</Label>
-              <Select
-                disabled={filterMainCategory === 'all'}
-                value={filterSubCategory}
-                onValueChange={setFilterSubCategory}
-              >
-                <SelectTrigger className="h-9 rounded-md border border-slate-100 bg-white">
-                  <SelectValue placeholder={filterMainCategory === 'all' ? 'Select main first' : 'All Sub'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sub</SelectItem>
-                  {subCategoriesForSelectedMain.filter(sc => sc._id).map((sc) => (
-                    <SelectItem key={sc._id} value={sc._id!}>{sc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Right: reset + meta */}
-          <div className="flex items-center gap-3 justify-end">
-            <div className="text-sm text-slate-500 mr-2 hidden sm:block">
-              Showing <span className="font-medium text-slate-700">{filteredCategories.length}</span> of <span className="font-medium text-slate-700">{categories.length}</span>
-            </div>
-
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-slate-600 hover:text-slate-800">
-              <X className="h-4 w-4 mr-2" /> Reset
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Results list */}
-      <div>
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white border border-slate-100 rounded-md shadow-sm overflow-hidden">
-            {/* header row for list */}
-            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm font-medium text-slate-900">Categories</h3>
-                <p className="text-xs text-slate-500">Manage categories and sub-categories</p>
+      {/* ENHANCED FILTER BAR */}
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader className="pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <Filter className="h-4 w-4 text-indigo-700" />
               </div>
-
-              <div className="text-xs text-slate-500 hidden sm:block">
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> Loading...
-                  </div>
-                ) : (
-                  <div>Showing <span className="font-medium text-slate-700">{filteredCategories.length}</span> of <span className="font-medium text-slate-700">{categories.length}</span></div>
-                )}
+              <div>
+                <CardTitle className="text-base font-semibold text-slate-900">Filter & Search</CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {hasActiveFilters ? `${[filterName, filterMainCategory !== 'all', filterSubCategory !== 'all'].filter(Boolean).length} active filter(s)` : 'No filters applied'}
+                </p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetFilters} 
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-3 font-medium"
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" /> Clear All
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-8 px-3 text-slate-600"
+              >
+                {showFilters ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
 
-            {/* body */}
-            <div className="p-4">
-              {loading ? (
-                <div className="flex justify-center p-8 text-slate-400">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : filteredCategories.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  No categories match your filters.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {/* We'll keep your CategoryList component — render it within a nicer wrapper.
-                      If CategoryList returns raw rows, it will still render correctly.
-                      If you want me to refactor CategoryList for the new card style I can do that too. */}
-                  <CategoryList
-                    categories={filteredCategories}
-                    onEdit={openEditSheet}
-                    onDelete={handleDeleteCategory}
-                    allCategories={categories}
+        {showFilters && (
+          <CardContent className="pt-5 pb-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search Input */}
+              <div className="space-y-2 md:col-span-1">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    placeholder="Search categories..."
+                    className="h-10 pl-10 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
+                  {filterName && (
+                    <button
+                      onClick={() => setFilterName("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              {/* Main Category */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Main Genre</Label>
+                <Select
+                  value={filterMainCategory}
+                  onValueChange={(val) => { setFilterMainCategory(val); setFilterSubCategory('all'); }}
+                >
+                  <SelectTrigger className="h-10 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
+                    <SelectValue placeholder="All Main Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Main Genre</SelectItem>
+                    {mainCategories.filter(mc => mc._id).map((mc) => (
+                      <SelectItem key={mc._id} value={mc._id!}>{mc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sub Category */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Sub-Genre</Label>
+                <Select
+                  disabled={filterMainCategory === 'all'}
+                  value={filterSubCategory}
+                  onValueChange={setFilterSubCategory}
+                >
+                  <SelectTrigger className="h-10 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50">
+                    <SelectValue placeholder={filterMainCategory === 'all' ? 'Select main first' : 'All Sub-Categories'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sub-Genre</SelectItem>
+                    {subCategoriesForSelectedMain.filter(sc => sc._id).map((sc) => (
+                      <SelectItem key={sc._id} value={sc._id!}>{sc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* ENHANCED RESULTS CARD */}
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader className="pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                <FolderTree className="h-4 w-4 text-slate-700" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  {loading ? 'Loading...' : `${categories.length} Total Genre`}
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {loading ? 'Please wait' : `Showing ${filteredCategories.length} genre${filteredCategories.length === 1 ? '' : 's'}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                <Layers className="h-3.5 w-3.5" />
+                <span>
+                  <span className="font-medium text-slate-700">{mainCategories.length}</span> Main
+                </span>
+                <span className="text-slate-300">•</span>
+                <span>
+                  <span className="font-medium text-slate-700">{categories.length - mainCategories.length}</span> Sub
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 space-y-3">
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+              <p className="text-sm text-slate-600 font-medium">Loading Genre...</p>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <FolderTree className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Genre Found</h3>
+              <p className="text-sm text-slate-600 max-w-md mb-4">
+                {hasActiveFilters 
+                  ? 'No categories match your current filter criteria. Try adjusting your filters.' 
+                  : 'There are no categories yet. Start by creating your first category.'}
+              </p>
+              {hasActiveFilters && (
+                <Button onClick={resetFilters} variant="outline" size="sm">
+                  Clear Filters
+                </Button>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+          ) : (
+            <CategoryList
+              categories={filteredCategories}
+              onEdit={openEditSheet}
+              onDelete={handleDeleteCategory}
+              allCategories={categories}
+            />
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Helpful hint / footer */}
-      <div className="text-sm text-slate-500">
-        Tip: Use the toolbar above to quickly narrow down categories. Selecting a "Main" will enable its Sub list for faster searching.
+      {/* HELPFUL TIP */}
+      <div className="flex items-start gap-2 text-sm text-slate-500 bg-blue-50 border border-blue-100 rounded-lg p-3">
+        <div className="w-1 h-1 rounded-full bg-blue-400 mt-2"></div>
+        <p>
+          <span className="font-medium text-slate-700">Tip:</span> Use the filter bar to quickly narrow down Genre. Selecting a main Genre will enable its sub-Genre filter.
+        </p>
       </div>
     </div>
   );
