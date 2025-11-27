@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   const modules = [
     {
-      title: "Media Assets",
+      title: "Items",
       description: "Full CRUD repository for library items. Manage subjects, durations, and hierarchical classifications.",
       icon: Clapperboard,
       href: "/media-assets",
@@ -30,7 +30,7 @@ export default function Home() {
       bgColor: "bg-indigo-50"
     },
     {
-      title: "Categories",
+      title: "Genere",
       description: "Configure the system hierarchy. Manage Main Categories (Genres) and linked Subcategories (Items).",
       icon: Layers,
       href: "/categories",
@@ -85,7 +85,7 @@ export default function Home() {
       </div>
 
       {/* Technical Overview Section */}
-      <div className="pt-6">
+      {/* <div className="pt-6">
         <h2 className="text-sm font-semibold mb-4 text-slate-500 uppercase tracking-wider">System Architecture</h2>
         <Card className="bg-slate-50/50 border-slate-200">
           <CardContent className="p-6">
@@ -134,7 +134,7 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 }
